@@ -15,9 +15,18 @@ class Field:
 
 class Name(Field):
     def __init__(self, value):
-        if not value:
-            raise ValueError("Name is a required field.")
         super().__init__(value)
+
+    @property
+    def value(self):
+        return self.__value
+
+    @value.setter
+    def value(self, value):
+        if value:
+            self.__value = value
+        else:
+            raise ValueError("Name is a required field.")
 
 
 class InvalidNumberError(ValueError):
@@ -26,9 +35,18 @@ class InvalidNumberError(ValueError):
 
 class Phone(Field):
     def __init__(self, value):
-        if not re.fullmatch(r"\d{10}", value):
-            raise InvalidNumberError("Invalid number format.")
         super().__init__(value)
+
+    @property
+    def value(self):
+        return self.__value
+
+    @value.setter
+    def value(self, value):
+        if re.fullmatch(r"\d{10}", value):
+            self.__value = value
+        else:
+            raise InvalidNumberError("Invalid number format.")
 
 
 class DateFormatError(ValueError):
@@ -41,14 +59,22 @@ class UnrealDateError(ValueError):
 
 class Birthday(Field):
     def __init__(self, value):
+        super().__init__(value)
+
+    @property
+    def value(self):
+        return self.__value
+
+    @value.setter
+    def value(self,value):
         if re.fullmatch(r"\d{2}.\d{2}.\d{4}", value):
             try:
                 value = datetime.strptime(value, "%d.%m.%Y").date()
+                self.__value = value
             except ValueError:
                 raise UnrealDateError()
         else:
             raise DateFormatError()
-        super().__init__(value)
 
 
 class Record:
@@ -128,21 +154,22 @@ class AddressBook(UserDict):
         except FileNotFoundError:
             print("File not found. Address book isn't saved")
         except PermissionError:
-            print ("Access to file is denied. Address book isn't saved.")
+            print("Access to file is denied. Address book isn't saved.")
         except Exception:
-            print ("Error! Address book isn't saved")
+            print("Error! Address book isn't saved")
 
     def read_from_file(self, filename):
         try:
             with open(filename, "rb") as file:
                 data = pickle.load(file)
                 self.data = data
+                print("Adress book is loaded from file")
         except FileNotFoundError:
             print("File not found. Creating a new address book.")
         except PermissionError:
-            print ("Access to file is denied. Creating a new address book.")
+            print("Access to file is denied. Creating a new address book.")
         except Exception:
-            print ("Error by loadind file. Creating a new address book.")
+            print("Error by loadind file. Creating a new address book.")
 
 
 def parse_input(user_input):
@@ -162,7 +189,7 @@ def input_error(func):
         except InvalidNumberError:
             return "Phone number must be 10 digits"
         except ValueError:
-            return "Write name and required infomation please."
+            return "Write name and information to work on"
         except IndexError:
             return "Write name for searching"
         except KeyError:
@@ -229,7 +256,7 @@ def delete_contact(args, book):
 def print_contacts(book):
     if book.data:
         for contact in book.data.values():
-            print(str(contact))
+            print(contact)
     else:
         print("Contact list is empty")
 
@@ -262,14 +289,11 @@ def print_birthdays(book):
 def main():
     print("Welcome to the assistant bot!")
     book = AddressBook()
-    filename = Path(".") / "Address_book.txt"
+    filename = Path(".") / "Address_book.bin"
     if filename.exists():
         book.read_from_file(filename)
-        print("Adress book is loaded from file")
     else:
-        print ("Creating a new address book")
-   
-    
+        print("Creating a new address book")
 
     while True:
         user_input = input("Enter a command: ")
